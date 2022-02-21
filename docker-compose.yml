@@ -1,0 +1,47 @@
+version: '3.7'
+
+services:
+  jwilder_nginx_proxy:
+    image: jwilder/nginx-proxy
+    container_name: jwilder_nginx_proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - certs:/etc/nginx/certs:ro
+      - confd:/etc/nginx/conf.d
+      - vhostd:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+    labels:
+      - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy
+    networks:
+      - net
+
+  jwilder_letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion:stable
+    container_name: jwilder_letsencrypt
+    restart: always
+    volumes_from:
+      - jwilder_nginx_proxy
+    volumes:
+      - certs:/etc/nginx/certs:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      NGINX_PROXY_CONTAINER: jwilder_nginx_proxy
+      DEFAULT_EMAIL: "info@mitlonik.com"
+    depends_on:
+      - jwilder_nginx_proxy
+    networks:
+      - net
+
+volumes:
+  certs:
+  html:
+  vhostd:
+  confd:
+
+networks:
+  net:
+    external: true
